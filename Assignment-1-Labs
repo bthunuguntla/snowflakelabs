@@ -1,0 +1,55 @@
+--Assignment 1
+
+--Task 1: Load Patient Data into Snowflake
+--Scenario: You have a CSV file named patient_records.csv stored in an AWS S3 bucket.
+--Load this data into the Patients table in Snowflake.
+
+create or replace TABLE HEALTHCAREDB.PATIENTS.PATIENTRECORDS_1 (
+	PATIENTID VARCHAR,
+	NAME VARCHAR,
+	DIAGNOSIS VARCHAR,
+	ADMISSIONDATE VARCHAR,
+	DISCHARGEDATE VARCHAR,
+	REGION VARCHAR,
+	AGE VARCHAR,
+	TOTALBILL VARCHAR,
+	INSURANCEPROVIDER VARCHAR,
+	STATUS VARCHAR
+);
+
+--Load Patient Data into Snowflake
+CREATE OR REPLACE FILE FORMAT my_csv_format TYPE=CSV
+FIELD_OPTIONALLY_ENCLOSED_BY='"'
+SKIP_HEADER=1;
+
+SELECT * FROM HealthcareDB.Patients.PatientRecords_1;
+
+CREATE OR REPLACE STAGE patient_stage
+URL='s3://client-1-20240910/'
+CREDENTIALS=(AWS_KEY_ID='MY_AWS_KEY_ID' AWS_SECRET_KEY='MY_AWS_SECRET_KEY')
+DIRECTORY = (ENABLE = TRUE);
+
+
+COPY INTO PatientRecords_1
+FROM @patient_stage
+FILE_FORMAT = (FORMAT_NAME = 'my_csv_format');
+
+SELECT * FROM HealthcareDB.Patients.PatientRecords_1;
+
+-----------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------
+
+--Task 2: Create and Query a Materialized View
+--Scenario: Generate a report summarizing the average hospital stay duration for each
+--diagnosis using a materialized view.
+
+SELECT * FROM HealthcareDB.Patients.PatientRecords;
+
+CREATE MATERIALIZED VIEW AvgStayByDiagnosis AS
+SELECT Diagnosis, 
+       AVG(DATEDIFF(DAY, AdmissionDate, DischargeDate)) AS AvgStay
+FROM PatientRecords
+GROUP BY Diagnosis;
+
+--Query the materialized view:
+SELECT * FROM AvgStayByDiagnosis;
